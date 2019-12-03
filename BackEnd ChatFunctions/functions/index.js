@@ -1,8 +1,27 @@
 const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
+admin.initializeApp();
+// replaces keywords with emoji in the "text" key of messages
+// pushed to /messages
+exports.emojify =
+    functions.database.ref('/messages/{pushId}/text')
+    .onWrite((change,context) => {
+        console.log("emojifying!");
+        // Get the value from the 'text' key of the message
+        const originalText = change.after.val();
+        const emojifiedText = emojifyText(originalText);
+
+        // Return a JavaScript Promise to update the database node
+        return admin.database().ref("/messages/" + context.params.pushId + "/").update({ text: emojifiedText });
+    });
+
+// Returns text with keywords replaced by emoji
+// Replacing with the regular expression /.../ig does a case-insensitive
+// search (i flag) for all occurrences (g flag) in the string
+function emojifyText(text) {
+    var emojifiedText = text;
+    emojifiedText = emojifiedText.replace(/\blol\b/ig, "😂");
+    emojifiedText = emojifiedText.replace(/\bcat\b/ig, "😸");
+    return emojifiedText;
+}
